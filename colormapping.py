@@ -35,15 +35,15 @@ def coord_to_idx(i, j, width):
     return j + i * width
 
 
-def spherical_coordinates(longitude, latitude, distance, rows, cols):
+def spherical_coordinates(latitude, longitude, distance, rows, cols):
     """Take a simple grid-based coordinates point and convert it to a spherical coordinates point"""
     # Get the step between two points for both axes
-    step_long = (LONG_MAX - LONG_MIN) / (cols - 1)
     step_lat = (LAT_MAX - LAT_MIN) / (rows - 1)
+    step_long = (LONG_MAX - LONG_MIN) / (cols - 1)
 
     # Transform coordinates using steps and starting long/lat
-    theta = radians(LONG_MIN + longitude * step_long)
     delta = radians(LAT_MAX - latitude * step_lat)
+    theta = radians(LONG_MIN + longitude * step_long)
     # Transform distance using earth's radius (approximation)
     rho = distance + EARTH_RADIUS
 
