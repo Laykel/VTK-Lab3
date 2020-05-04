@@ -13,6 +13,7 @@ from math import cos, sin, radians
 
 # Earth radius (meters)
 EARTH_RADIUS = 6371009
+
 # Latitude north (degrees)
 LAT_MIN = 45
 LAT_MAX = 47.5
@@ -89,6 +90,8 @@ def main():
     renderer = vtk.vtkRenderer()
     renderer.AddActor(actor)
     renderer.SetBackground(colors.GetColor3d("Cornsilk"))
+    renderer.GetActiveCamera().Roll(-90)
+    renderer.ResetCamera()
 
     # Window properties
     ren_win = vtk.vtkRenderWindow()
