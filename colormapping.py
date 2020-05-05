@@ -77,11 +77,8 @@ def is_neighbourhood_flat(m, i, j, nbr_neighbours, dist):
     return max(counts) > nbr_neighbours
 
 
-# Main instructions
-def main():
-    rows, cols, heights = read_height_matrix('altitudes.txt')
-
-    # Create geometry, topology and scalars
+def build_map(heights, rows, cols, sea_level=0):
+    """Build a relief map from the raw heights and return a polydata object"""
     points = vtk.vtkPoints()
     cells = vtk.vtkCellArray()
     scalars = vtk.vtkFloatArray()
@@ -105,6 +102,16 @@ def main():
     relief_map.SetPoints(points)
     relief_map.SetPolys(cells)
     relief_map.GetPointData().SetScalars(scalars)
+
+    return relief_map
+
+
+# Main instructions
+def main():
+    rows, cols, heights = read_height_matrix('altitudes.txt')
+
+    # Create geometry, topology and scalars and get our Polydata object
+    relief_map = build_map(heights, rows, cols, sea_level=0)
 
     # Configure lookup table
     # https://danstoj.pythonanywhere.com/article/vtk-1#_creating_custom_colour_gradients
@@ -146,6 +153,8 @@ def main():
     renderer.AddActor(actor)
     renderer.SetBackground(0.5, 0.5, 0.5)
     renderer.GetActiveCamera().Roll(-90)  # Roll camera in position
+    renderer.GetActiveCamera().Elevation(-32)
+    renderer.GetActiveCamera().Roll(-5)
     renderer.ResetCamera()
 
     # Window properties
