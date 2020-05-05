@@ -11,6 +11,9 @@ Python version: 3.7.4
 import vtk
 from math import cos, sin, radians
 
+# Whether or not to save result as PNG file
+DRAW_PNG = False
+
 # Earth radius (meters)
 EARTH_RADIUS = 6371009
 
@@ -85,9 +88,11 @@ def build_map(heights, rows, cols, sea_level=0):
 
     for i in range(rows):
         for j in range(cols):
-            points.InsertNextPoint(spherical_coordinates(i, j, heights[i][j], rows, cols))
+            height = sea_level if heights[i][j] <= sea_level else heights[i][j]
+            points.InsertNextPoint(spherical_coordinates(i, j, height, rows, cols))
 
-            scalar = 0 if is_neighbourhood_flat(heights, i, j, nbr_neighbours=NBR_VAL_FLAT, dist=1) else heights[i][j]
+            is_flat = is_neighbourhood_flat(heights, i, j, nbr_neighbours=NBR_VAL_FLAT, dist=1)
+            scalar = 0 if is_flat or heights[i][j] <= sea_level else heights[i][j]
             scalars.InsertTuple1(coord_to_idx(i, j, cols), scalar)
 
             if i != 0 and j != 3000:
@@ -106,12 +111,32 @@ def build_map(heights, rows, cols, sea_level=0):
     return relief_map
 
 
+def map_to_png(filename, renderer):
+    """Take a configured `renderer` and generate a PNG file as `filename`"""
+    ren_win = vtk.vtkRenderWindow()
+    ren_win.OffScreenRenderingOn()
+    ren_win.AddRenderer(renderer)
+    ren_win.Render()
+
+    w2if = vtk.vtkWindowToImageFilter()
+    w2if.SetInput(ren_win)
+    w2if.SetScale(10)
+    w2if.SetInputBufferTypeToRGBA()
+    w2if.Update()
+
+    writer = vtk.vtkPNGWriter()
+    writer.SetInputConnection(w2if.GetOutputPort())
+    writer.SetFileName(filename)
+    writer.Write()
+
+
 # Main instructions
 def main():
     rows, cols, heights = read_height_matrix('altitudes.txt')
 
     # Create geometry, topology and scalars and get our Polydata object
-    relief_map = build_map(heights, rows, cols, sea_level=0)
+    relief_map = build_map(heights, rows, cols)
+    # relief_map = build_map(heights, rows, cols, sea_level=370)  # Sea level at 370m
 
     # Configure lookup table
     # https://danstoj.pythonanywhere.com/article/vtk-1#_creating_custom_colour_gradients
@@ -123,7 +148,7 @@ def main():
     lut.SetNumberOfColors(nbr_colors)
     lut.SetTableRange(min_alt, max_alt)
 
-    # On scalars below the minimum altitude, use blue (lakes)
+    # On scalars below the minimum altitude, use blue (lakes and "sea")
     lut.UseBelowRangeColorOn()
     lut.SetBelowRangeColor(0.34, 0.35, 0.67, 1)
 
@@ -149,13 +174,20 @@ def main():
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
 
+    # Set the renderer
     renderer = vtk.vtkRenderer()
     renderer.AddActor(actor)
     renderer.SetBackground(0.5, 0.5, 0.5)
-    renderer.GetActiveCamera().Roll(-90)  # Roll camera in position
+
+    # Move camera in position
+    renderer.GetActiveCamera().Roll(-90)
     renderer.GetActiveCamera().Elevation(-32)
     renderer.GetActiveCamera().Roll(-5)
     renderer.ResetCamera()
+
+    # Use the renderer to write a PNG file
+    if DRAW_PNG:
+        map_to_png("sea_level_map.png", renderer)
 
     # Window properties
     ren_win = vtk.vtkRenderWindow()
