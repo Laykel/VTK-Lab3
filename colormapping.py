@@ -88,13 +88,16 @@ def build_map(heights, rows, cols, sea_level=0):
 
     for i in range(rows):
         for j in range(cols):
+            # Insert 3D geometry, with z being the height (sea_level if under sea level)
             height = sea_level if heights[i][j] <= sea_level else heights[i][j]
             points.InsertNextPoint(spherical_coordinates(i, j, height, rows, cols))
 
+            # Insert scalar (equal to the height in general, equal to 0 if under sea level or if lake)
             is_flat = is_neighbourhood_flat(heights, i, j, nbr_neighbours=NBR_VAL_FLAT, dist=1)
             scalar = 0 if is_flat or heights[i][j] <= sea_level else heights[i][j]
             scalars.InsertTuple1(coord_to_idx(i, j, cols), scalar)
 
+            # Insert topology (quadrilaterals)
             if i != 0 and j != 3000:
                 quad = (coord_to_idx(i, j, cols),
                         coord_to_idx(i, j + 1, cols),
@@ -113,17 +116,20 @@ def build_map(heights, rows, cols, sea_level=0):
 
 def map_to_png(filename, renderer):
     """Take a configured `renderer` and generate a PNG file as `filename`"""
+    # Don't render window on screen
     ren_win = vtk.vtkRenderWindow()
     ren_win.OffScreenRenderingOn()
     ren_win.AddRenderer(renderer)
     ren_win.Render()
 
+    # Create filter from (invisible) window
     w2if = vtk.vtkWindowToImageFilter()
     w2if.SetInput(ren_win)
     w2if.SetScale(10)
     w2if.SetInputBufferTypeToRGBA()
     w2if.Update()
 
+    # Write to PNG
     writer = vtk.vtkPNGWriter()
     writer.SetInputConnection(w2if.GetOutputPort())
     writer.SetFileName(filename)
