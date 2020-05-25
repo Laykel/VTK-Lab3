@@ -186,9 +186,8 @@ def main():
     renderer.SetBackground(0.5, 0.5, 0.5)
 
     # Move camera in position
-    renderer.GetActiveCamera().Roll(-90)
+    renderer.GetActiveCamera().Roll(-95)
     renderer.GetActiveCamera().Elevation(-32)
-    renderer.GetActiveCamera().Roll(-5)
     renderer.ResetCamera()
 
     # Use the renderer to write a PNG file
